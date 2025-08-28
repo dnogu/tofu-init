@@ -3,29 +3,27 @@ const { execSync } = require('child_process');
 
 function getFlag(name, value, type = 'boolean') {
   if (type === 'boolean') {
-if (value === undefined || value === null) {
-  // Explicitly handle undefined/null values
-  return '';
-}
-if (value === 'true') {
-  return `--${name}`;
-}
-if (value === 'false') {
-  return '';
-}
-// Unexpected value: return empty string and optionally log a warning
-core.warning(`Unexpected value for boolean flag '${name}': ${value}`);
-return '';
+    if (value === undefined || value === null) {
+      return '';
+    }
+    if (value === 'true') {
+      return ` --${name}`;
+    }
+    if (value === 'false') {
+      return '';
+    }
+    core.warning(`Unexpected value for boolean flag '${name}': ${value}`);
+    return '';
   }
   if (type === 'string' && value) {
-    return `--${name}=${value}`;
+    return ` --${name}=${value}`;
   }
   return '';
 }
 
 function getRepeatableFlag(name, value) {
   if (!value) return [];
-  return value.split(',').map(v => `--${name}=${v.trim()}`);
+  return value.split(',').map(v => ` --${name}=${v.trim()}`);
 }
 
 async function run() {
@@ -40,23 +38,23 @@ async function run() {
     }
 
     // Flags
-    cmdParts.push(getFlag('input', core.getInput('input'), 'string'));
-    cmdParts.push(getFlag('lock', core.getInput('lock'), 'string'));
-    cmdParts.push(getFlag('lock-timeout', core.getInput('lock-timeout'), 'string'));
-    if (core.getInput('no-color') === 'true') cmdParts.push('--no-color');
-    if (core.getInput('upgrade') === 'true') cmdParts.push('--upgrade');
-    if (core.getInput('json') === 'true') cmdParts.push('--json');
-    cmdParts = cmdParts.concat(getRepeatableFlag('var', core.getInput('var')));
-    cmdParts = cmdParts.concat(getRepeatableFlag('var-file', core.getInput('var-file')));
-    cmdParts.push(getFlag('from-module', core.getInput('from-module'), 'string'));
-    cmdParts.push(getFlag('backend', core.getInput('backend'), 'string'));
-    cmdParts = cmdParts.concat(getRepeatableFlag('backend-config', core.getInput('backend-config')));
-    if (core.getInput('reconfigure') === 'true') cmdParts.push('--reconfigure');
-    if (core.getInput('migrate-state') === 'true') cmdParts.push('--migrate-state');
-    if (core.getInput('force-copy') === 'true') cmdParts.push('--force-copy');
-    cmdParts.push(getFlag('get', core.getInput('get'), 'string'));
-    cmdParts.push(getFlag('plugin-dir', core.getInput('plugin-dir'), 'string'));
-    cmdParts.push(getFlag('lockfile', core.getInput('lockfile'), 'string'));
+  cmdParts.push(getFlag('input', core.getInput('input'), 'string'));
+  cmdParts.push(getFlag('lock', core.getInput('lock'), 'string'));
+  cmdParts.push(getFlag('lock-timeout', core.getInput('lock-timeout'), 'string'));
+  if (core.getInput('no-color') === 'true') cmdParts.push(' --no-color');
+  if (core.getInput('upgrade') === 'true') cmdParts.push(' --upgrade');
+  if (core.getInput('json') === 'true') cmdParts.push(' --json');
+  cmdParts = cmdParts.concat(getRepeatableFlag('var', core.getInput('var')));
+  cmdParts = cmdParts.concat(getRepeatableFlag('var-file', core.getInput('var-file')));
+  cmdParts.push(getFlag('from-module', core.getInput('from-module'), 'string'));
+  cmdParts.push(getFlag('backend', core.getInput('backend'), 'string'));
+  cmdParts = cmdParts.concat(getRepeatableFlag('backend-config', core.getInput('backend-config')));
+  if (core.getInput('reconfigure') === 'true') cmdParts.push(' --reconfigure');
+  if (core.getInput('migrate-state') === 'true') cmdParts.push(' --migrate-state');
+  if (core.getInput('force-copy') === 'true') cmdParts.push(' --force-copy');
+  cmdParts.push(getFlag('get', core.getInput('get'), 'string'));
+  cmdParts.push(getFlag('plugin-dir', core.getInput('plugin-dir'), 'string'));
+  cmdParts.push(getFlag('lockfile', core.getInput('lockfile'), 'string'));
 
     // Remove empty strings
     cmdParts = cmdParts.filter(Boolean);
