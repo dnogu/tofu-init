@@ -38,6 +38,7 @@ async function run() {
     }
 
     // Flags
+
   cmdParts.push(getFlag('input', core.getInput('input'), 'string'));
   cmdParts.push(getFlag('lock', core.getInput('lock'), 'string'));
   cmdParts.push(getFlag('lock-timeout', core.getInput('lock-timeout'), 'string'));
@@ -55,6 +56,7 @@ async function run() {
   cmdParts.push(getFlag('get', core.getInput('get'), 'string'));
   cmdParts.push(getFlag('plugin-dir', core.getInput('plugin-dir'), 'string'));
   cmdParts.push(getFlag('lockfile', core.getInput('lockfile'), 'string'));
+
 
     // Remove empty strings
     cmdParts = cmdParts.filter(Boolean);
