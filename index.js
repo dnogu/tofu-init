@@ -1,0 +1,68 @@
+const core = require('@actions/core');
+const { execSync } = require('child_process');
+
+function getFlag(name, value, type = 'boolean') {
+  if (type === 'boolean') {
+    if (value === undefined || value === null) {
+      // Explicitly handle undefined/null values
+      return '';
+    }
+    if (value === 'true') {
+      return `--${name}`;
+    }
+    if (value === 'false') {
+      return '';
+    }
+    // Unexpected value: return empty string and optionally log a warning
+    core.warning(`Unexpected value for boolean flag '${name}': ${value}`);
+    return '';
+  }
+  if (type === 'string' && value) {
+    return `--${name}=${value}`;
+  }
+  return '';
+}
+
+function getRepeatableFlag(name, value) {
+  if (!value) return '';
+  return value.split(',').map(v => `--${name}=${v.trim()}`).join(' ');
+}
+
+async function run() {
+  try {
+    const workingDir = core.getInput('working-directory') || process.cwd();
+    let cmd = 'tofu init';
+
+    // Global option
+    const chdir = core.getInput('chdir');
+    if (chdir) cmd = `tofu -chdir=${chdir} init`;
+
+    // Flags
+    cmd += getFlag('input', core.getInput('input'), 'string');
+    cmd += getFlag('lock', core.getInput('lock'), 'string');
+    cmd += getFlag('lock-timeout', core.getInput('lock-timeout'), 'string');
+    cmd += getFlag('no-color', core.getInput('no-color'), 'boolean');
+    cmd += getFlag('upgrade', core.getInput('upgrade'), 'boolean');
+    cmd += getFlag('json', core.getInput('json'), 'boolean');
+    cmd += getRepeatableFlag('var', core.getInput('var'));
+    cmd += getRepeatableFlag('var-file', core.getInput('var-file'));
+    cmd += getFlag('from-module', core.getInput('from-module'), 'string');
+    cmd += getFlag('backend', core.getInput('backend'), 'string');
+    cmd += getRepeatableFlag('backend-config', core.getInput('backend-config'));
+    cmd += getFlag('reconfigure', core.getInput('reconfigure'), 'boolean');
+    cmd += getFlag('migrate-state', core.getInput('migrate-state'), 'boolean');
+    cmd += getFlag('force-copy', core.getInput('force-copy'), 'boolean');
+    cmd += getFlag('get', core.getInput('get'), 'string');
+    cmd += getFlag('plugin-dir', core.getInput('plugin-dir'), 'string');
+    cmd += getFlag('lockfile', core.getInput('lockfile'), 'string');
+
+    core.info(`Running: ${cmd}`);
+    const output = execSync(cmd, { cwd: workingDir, encoding: 'utf-8' });
+    core.setOutput('init-output', output);
+    core.info('tofu init completed successfully.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
+}
+
+run();
