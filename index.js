@@ -3,7 +3,19 @@ const { execSync } = require('child_process');
 
 function getFlag(name, value, type = 'boolean') {
   if (type === 'boolean') {
-    return value === 'true' ? `--${name}` : '';
+if (value === undefined || value === null) {
+  // Explicitly handle undefined/null values
+  return '';
+}
+if (value === 'true') {
+  return `--${name}`;
+}
+if (value === 'false') {
+  return '';
+}
+// Unexpected value: return empty string and optionally log a warning
+core.warning(`Unexpected value for boolean flag '${name}': ${value}`);
+return '';
   }
   if (type === 'string' && value) {
     return `--${name}=${value}`;
