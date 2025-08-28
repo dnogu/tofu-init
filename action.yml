@@ -1,9 +1,9 @@
-name: 'GitHub Tofu Init'
+name: 'Tofu Init'
 description: 'A GitHub Action to run tofu init with all supported options.'
 author: 'dnogu'
 runs:
   using: 'node20'
-  main: 'index.js'
+  main: 'dist/index.js'
 inputs:
   working-directory:
     description: 'The directory in which to run tofu init.'
