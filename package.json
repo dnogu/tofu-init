@@ -3,7 +3,14 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "build": "ncc build index.js -o dist"
+  },
   "dependencies": {
     "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }

@@ -84,3 +84,6 @@ inputs:
 outputs:
   init-output:
     description: 'The output from tofu init.'
+branding:
+  icon: 'box'
+  color: 'yellow'
