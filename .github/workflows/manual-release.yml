@@ -1,15 +1,27 @@
-name: Release
+name: Manual Release
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      prerelease:
+        description: 'Is this a prerelease?'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   release:
-    name: Create Release
+    name: Create Manual Release
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     
     steps:
       - name: Checkout code
@@ -18,38 +30,8 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for release labels
-        id: check-labels
-        run: |
-          labels="${{ toJson(github.event.pull_request.labels.*.name) }}"
-          echo "Labels: $labels"
-          
-          # Check for prerelease label
-          if echo "$labels" | grep -q "prerelease"; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "Found prerelease label"
-          else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
-          fi
-          
-          # Check for version bump labels
-          if echo "$labels" | grep -q "major"; then
-            echo "release_type=major" >> $GITHUB_OUTPUT
-            echo "Found major release label"
-          elif echo "$labels" | grep -q "minor"; then
-            echo "release_type=minor" >> $GITHUB_OUTPUT
-            echo "Found minor release label"
-          elif echo "$labels" | grep -q "patch"; then
-            echo "release_type=patch" >> $GITHUB_OUTPUT
-            echo "Found patch release label"
-          else
-            echo "release_type=none" >> $GITHUB_OUTPUT
-            echo "No release labels found"
-          fi
-
       - name: Get latest tag
         id: get-latest-tag
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           # Get the latest tag, fallback to v0.0.0 if no tags exist
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
@@ -58,11 +40,10 @@ jobs:
 
       - name: Calculate new version
         id: calc-version
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           latest_tag="${{ steps.get-latest-tag.outputs.latest_tag }}"
-          release_type="${{ steps.check-labels.outputs.release_type }}"
-          is_prerelease="${{ steps.check-labels.outputs.is_prerelease }}"
+          release_type="${{ github.event.inputs.release_type }}"
+          is_prerelease="${{ github.event.inputs.prerelease }}"
           
           # Remove 'v' prefix and split version
           version_number=${latest_tag#v}
@@ -101,7 +82,6 @@ jobs:
           echo "New version: $new_version"
 
       - name: Update package.json version
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           new_version="${{ steps.calc-version.outputs.new_version }}"
           version_without_v=${new_version#v}
@@ -112,28 +92,23 @@ jobs:
           echo "Updated package.json to version $version_without_v"
 
       - name: Setup Node.js
-        if: steps.check-labels.outputs.release_type != 'none'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
-        if: steps.check-labels.outputs.release_type != 'none'
         run: npm ci
 
       - name: Run tests
-        if: steps.check-labels.outputs.release_type != 'none'
         run: npm test
 
       - name: Build action
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           npm install -g @vercel/ncc
           npm run build
 
       - name: Commit version update
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -141,7 +116,6 @@ jobs:
           git commit -m "chore: bump version to ${{ steps.calc-version.outputs.new_version }}" || exit 0
 
       - name: Create and push tag
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           new_version="${{ steps.calc-version.outputs.new_version }}"
           git tag -a "$new_version" -m "Release $new_version"
@@ -150,7 +124,6 @@ jobs:
 
       - name: Generate release notes
         id: generate-notes
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
           new_version="${{ steps.calc-version.outputs.new_version }}"
           latest_tag="${{ steps.get-latest-tag.outputs.latest_tag }}"
@@ -177,7 +150,6 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        if: steps.check-labels.outputs.release_type != 'none'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -186,10 +158,10 @@ jobs:
           release_name: Release ${{ steps.calc-version.outputs.new_version }}
           body: ${{ steps.generate-notes.outputs.release_body }}
           draft: false
-          prerelease: ${{ steps.check-labels.outputs.is_prerelease }}
+          prerelease: ${{ github.event.inputs.prerelease }}
 
       - name: Update major version tag
-        if: steps.check-labels.outputs.release_type != 'none' && steps.check-labels.outputs.is_prerelease == 'false'
+        if: github.event.inputs.prerelease == 'false'
         run: |
           new_version="${{ steps.calc-version.outputs.new_version }}"
           version_without_v=${new_version#v}
@@ -203,22 +175,14 @@ jobs:
           echo "Updated major version tag: $major_version"
 
       - name: Summary
-        if: steps.check-labels.outputs.release_type != 'none'
         run: |
-          is_prerelease="${{ steps.check-labels.outputs.is_prerelease }}"
+          is_prerelease="${{ github.event.inputs.prerelease }}"
           if [ "$is_prerelease" = "true" ]; then
             echo "🎉 Successfully created prerelease ${{ steps.calc-version.outputs.new_version }}"
           else
             echo "🎉 Successfully created release ${{ steps.calc-version.outputs.new_version }}"
           fi
-          echo "📦 Release type: ${{ steps.check-labels.outputs.release_type }}"
+          echo "📦 Release type: ${{ github.event.inputs.release_type }}"
           echo "🏷️ Previous version: ${{ steps.get-latest-tag.outputs.latest_tag }}"
           echo "🆕 New version: ${{ steps.calc-version.outputs.new_version }}"
           echo "🚀 Prerelease: $is_prerelease"
-
-      - name: No release needed
-        if: steps.check-labels.outputs.release_type == 'none'
-        run: |
-          echo "ℹ️ No release labels found on this PR. Skipping release creation."
-          echo "💡 Add one of these labels to create a release: 'major', 'minor', 'patch'"
-          echo "💡 Add 'prerelease' label along with version label to create a prerelease"
