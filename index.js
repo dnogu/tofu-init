@@ -7,7 +7,7 @@ function getFlag(name, value, type = 'boolean') {
       return '';
     }
     if (value === 'true') {
-      return ` --${name}`;
+      return `--${name}`;
     }
     if (value === 'false') {
       return '';
@@ -16,52 +16,75 @@ function getFlag(name, value, type = 'boolean') {
     return '';
   }
   if (type === 'string' && value) {
-    return ` --${name}=${value}`;
+    return `--${name}=${value}`;
   }
   return '';
 }
 
 function getRepeatableFlag(name, value) {
   if (!value) return [];
-  return value.split(',').map(v => ` --${name}=${v.trim()}`);
+  return value.split(',').map(v => `--${name}=${v.trim()}`);
+}
+
+function buildTofuInitCommand(inputs) {
+  let cmdParts = ['tofu', 'init'];
+
+  // Global option
+  if (inputs.chdir) {
+    cmdParts = ['tofu', `-chdir=${inputs.chdir}`, 'init'];
+  }
+
+  // Flags - only add if different from defaults
+  if (inputs.input && inputs.input !== 'true') cmdParts.push(getFlag('input', inputs.input, 'string'));
+  if (inputs.lock && inputs.lock !== 'true') cmdParts.push(getFlag('lock', inputs.lock, 'string'));
+  if (inputs.lockTimeout && inputs.lockTimeout !== '0s') cmdParts.push(getFlag('lock-timeout', inputs.lockTimeout, 'string'));
+  if (inputs.noColor === 'true') cmdParts.push('--no-color');
+  if (inputs.upgrade === 'true') cmdParts.push('--upgrade');
+  if (inputs.json === 'true') cmdParts.push('--json');
+  cmdParts = cmdParts.concat(getRepeatableFlag('var', inputs.var));
+  cmdParts = cmdParts.concat(getRepeatableFlag('var-file', inputs.varFile));
+  cmdParts.push(getFlag('from-module', inputs.fromModule, 'string'));
+  if (inputs.backend && inputs.backend !== 'true') cmdParts.push(getFlag('backend', inputs.backend, 'string'));
+  cmdParts = cmdParts.concat(getRepeatableFlag('backend-config', inputs.backendConfig));
+  if (inputs.reconfigure === 'true') cmdParts.push('--reconfigure');
+  if (inputs.migrateState === 'true') cmdParts.push('--migrate-state');
+  if (inputs.forceCopy === 'true') cmdParts.push('--force-copy');
+  if (inputs.get && inputs.get !== 'true') cmdParts.push(getFlag('get', inputs.get, 'string'));
+  cmdParts.push(getFlag('plugin-dir', inputs.pluginDir, 'string'));
+  cmdParts.push(getFlag('lockfile', inputs.lockfile, 'string'));
+
+  // Remove empty strings
+  cmdParts = cmdParts.filter(Boolean);
+
+  return cmdParts.join(' ');
 }
 
 async function run() {
   try {
     const workingDir = core.getInput('working-directory') || process.cwd();
-    let cmdParts = ['tofu', 'init'];
+    
+    const inputs = {
+      chdir: core.getInput('chdir'),
+      input: core.getInput('input'),
+      lock: core.getInput('lock'),
+      lockTimeout: core.getInput('lock-timeout'),
+      noColor: core.getInput('no-color'),
+      upgrade: core.getInput('upgrade'),
+      json: core.getInput('json'),
+      var: core.getInput('var'),
+      varFile: core.getInput('var-file'),
+      fromModule: core.getInput('from-module'),
+      backend: core.getInput('backend'),
+      backendConfig: core.getInput('backend-config'),
+      reconfigure: core.getInput('reconfigure'),
+      migrateState: core.getInput('migrate-state'),
+      forceCopy: core.getInput('force-copy'),
+      get: core.getInput('get'),
+      pluginDir: core.getInput('plugin-dir'),
+      lockfile: core.getInput('lockfile')
+    };
 
-    // Global option
-    const chdir = core.getInput('chdir');
-    if (chdir) {
-      cmdParts = ['tofu', `-chdir=${chdir}`, 'init'];
-    }
-
-    // Flags
-
-  cmdParts.push(getFlag('input', core.getInput('input'), 'string'));
-  cmdParts.push(getFlag('lock', core.getInput('lock'), 'string'));
-  cmdParts.push(getFlag('lock-timeout', core.getInput('lock-timeout'), 'string'));
-  if (core.getInput('no-color') === 'true') cmdParts.push(' --no-color');
-  if (core.getInput('upgrade') === 'true') cmdParts.push(' --upgrade');
-  if (core.getInput('json') === 'true') cmdParts.push(' --json');
-  cmdParts = cmdParts.concat(getRepeatableFlag('var', core.getInput('var')));
-  cmdParts = cmdParts.concat(getRepeatableFlag('var-file', core.getInput('var-file')));
-  cmdParts.push(getFlag('from-module', core.getInput('from-module'), 'string'));
-  cmdParts.push(getFlag('backend', core.getInput('backend'), 'string'));
-  cmdParts = cmdParts.concat(getRepeatableFlag('backend-config', core.getInput('backend-config')));
-  if (core.getInput('reconfigure') === 'true') cmdParts.push(' --reconfigure');
-  if (core.getInput('migrate-state') === 'true') cmdParts.push(' --migrate-state');
-  if (core.getInput('force-copy') === 'true') cmdParts.push(' --force-copy');
-  cmdParts.push(getFlag('get', core.getInput('get'), 'string'));
-  cmdParts.push(getFlag('plugin-dir', core.getInput('plugin-dir'), 'string'));
-  cmdParts.push(getFlag('lockfile', core.getInput('lockfile'), 'string'));
-
-
-    // Remove empty strings
-    cmdParts = cmdParts.filter(Boolean);
-
-    const cmd = cmdParts.join(' ');
+    const cmd = buildTofuInitCommand(inputs);
     core.info(`Running: ${cmd}`);
     const output = execSync(cmd, { cwd: workingDir, encoding: 'utf-8' });
     core.setOutput('init-output', output);
@@ -71,4 +94,15 @@ async function run() {
   }
 }
 
-run();
+// Export functions for testing
+module.exports = {
+  getFlag,
+  getRepeatableFlag,
+  buildTofuInitCommand,
+  run
+};
+
+// Only run if this file is executed directly
+if (require.main === module) {
+  run();
+}
