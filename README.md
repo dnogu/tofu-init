@@ -2,6 +2,16 @@
 
 This GitHub Action runs `tofu init` with all supported options, automating OpenTofu initialization in your CI/CD workflows.
 
+## Quick Start
+
+The most basic usage - just initialize OpenTofu in your current directory:
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - uses: dnogu/tofu-init@v1
+```
+
 ## Usage
 
 ```yaml
@@ -16,7 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Run tofu init
-        uses: dnogu/github-tofu-init@v1
+        uses: dnogu/tofu-init@v1
         with:
           working-directory: ./infra
           upgrade: true
