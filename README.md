@@ -85,7 +85,7 @@ jobs:
 ### Basic Tofu Init
 ```yaml
 steps:
-  - name: Run basic tofu init
+  - name: Run Basic Tofu Init
     uses: dnogu/github-tofu-init@v1
     with:
       working-directory: ./infra
