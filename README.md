@@ -82,7 +82,7 @@ jobs:
 
 ## Examples
 
-### Basic tofu init
+### Basic Tofu Init
 ```yaml
 steps:
   - name: Run basic tofu init
@@ -91,7 +91,7 @@ steps:
       working-directory: ./infra
 ```
 
-### tofu init with backend config
+### Tofu Init With Backend Config
 ```yaml
 steps:
   - name: Run tofu init with backend config
