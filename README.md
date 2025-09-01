@@ -85,8 +85,16 @@ jobs:
 ### Basic Tofu Init
 ```yaml
 steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
+  
+  - name: Setup OpenTofu
+    uses: opentofu/setup-opentofu@v1
+    with:
+      tofu_version: '1.8.0'
+  
   - name: Run Basic Tofu Init
-    uses: dnogu/github-tofu-init@v1
+    uses: dnogu/tofu-init@v1
     with:
       working-directory: ./infra
 ```
@@ -94,8 +102,16 @@ steps:
 ### Tofu Init With Backend Config
 ```yaml
 steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
+  
+  - name: Setup OpenTofu
+    uses: opentofu/setup-opentofu@v1
+    with:
+      tofu_version: '1.8.0'
+  
   - name: Run tofu init with backend config
-    uses: dnogu/github-tofu-init@v1
+    uses: dnogu/tofu-init@v1
     with:
       working-directory: ./infra
       backend-config: "bucket=my-bucket,region=us-east-1"
