@@ -4,7 +4,7 @@ This GitHub Action runs `tofu init` with all supported options, automating OpenT
 
 ## Quick Start
 
-The most basic usage - just initialize OpenTofu in your current directory:
+The most basic usage - initialize OpenTofu in your current directory:
 
 ```yaml
 steps:
@@ -119,4 +119,4 @@ steps:
 
 ## Author
 
-- dnogu
+- dnogu 
