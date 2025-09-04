@@ -3,8 +3,6 @@ name: Build and Validate PR
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 jobs:
   test-and-build:
@@ -84,11 +82,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add dist/
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git commit -m "build: update dist for PR changes"
-          else
-            git commit -m "build: update dist for main branch"
-          fi
+          git commit -m "build: update dist for PR changes"
           git push
           
       - name: Comment on PR
