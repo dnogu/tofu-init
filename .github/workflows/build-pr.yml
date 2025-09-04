@@ -68,12 +68,13 @@ jobs:
       - name: Check for dist changes
         id: check-changes
         run: |
-          if git diff --quiet dist/; then
+          # Check if dist folder exists and has changes
+          if [ ! -d "dist" ] || ! git diff --quiet dist/; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in dist/ (or dist/ is missing)"
+          else
             echo "has-changes=false" >> $GITHUB_OUTPUT
             echo "No changes to dist/"
-          else
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-            echo "Changes detected in dist/"
           fi
           
       - name: Commit built files
