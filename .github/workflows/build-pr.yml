@@ -62,16 +62,30 @@ jobs:
             exit 1
           fi
         
+      - name: Check if dist exists before build
+        id: pre-build-check
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "dist-missing=true" >> $GITHUB_OUTPUT
+            echo "dist/ folder is missing before build"
+          else
+            echo "dist-missing=false" >> $GITHUB_OUTPUT
+            echo "dist/ folder exists before build"
+          fi
+        
       - name: Build action
         run: npm run build
         
       - name: Check for dist changes
         id: check-changes
         run: |
-          # Check if dist folder exists and has changes
-          if [ ! -d "dist" ] || ! git diff --quiet dist/; then
+          # If dist was missing before build, we definitely have changes
+          if [ "${{ steps.pre-build-check.outputs.dist-missing }}" = "true" ]; then
             echo "has-changes=true" >> $GITHUB_OUTPUT
-            echo "Changes detected in dist/ (or dist/ is missing)"
+            echo "Changes detected - dist/ was missing and has been rebuilt"
+          elif ! git diff --quiet dist/; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in existing dist/"
           else
             echo "has-changes=false" >> $GITHUB_OUTPUT
             echo "No changes to dist/"
