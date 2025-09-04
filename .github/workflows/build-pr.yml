@@ -68,7 +68,6 @@ jobs:
         run: npm run build
         
       - name: Check for dist changes
-        if: github.event_name == 'pull_request'
         id: check-changes
         run: |
           if git diff --quiet dist/; then
@@ -80,12 +79,16 @@ jobs:
           fi
           
       - name: Commit built files
-        if: github.event_name == 'pull_request' && steps.check-changes.outputs.has-changes == 'true'
+        if: steps.check-changes.outputs.has-changes == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add dist/
-          git commit -m "build: update dist for PR changes"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git commit -m "build: update dist for PR changes"
+          else
+            git commit -m "build: update dist for main branch"
+          fi
           git push
           
       - name: Comment on PR
